@@ -121,8 +121,8 @@ def train(args, train_dataset, model, tokenizer):
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
     optimizer_delta = AdamW(optimizer_grouped_parameters_delta, lr=args.learning_rate_delta, eps=args.adam_epsilon_delta)
 
-    scheduler = get_linear_schedule_with_warmup(optimizer, warmup_steps=args.warmup_steps, num_training_steps=t_total)
-    scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, warmup_steps=args.warmup_steps_delta, num_training_steps=t_total)
+    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total)
+    scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, num_warmup_steps=args.warmup_steps_delta, num_training_steps=t_total)
 
     if args.fp16:
         try:
