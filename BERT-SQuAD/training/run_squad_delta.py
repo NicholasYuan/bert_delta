@@ -190,6 +190,9 @@ def train(args, train_dataset, model, tokenizer):
                 scheduler.step()  # Update learning rate schedule
                 optimizer.step()
                 model.zero_grad()
+
+                if global_step % args.print_step == 0:
+                    logger.info('train','epoch:',epoch,'\tloss:',loss,'' )
             else:
                 delta_params_fill_0(model)
                 scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, warmup_steps=args.warmup_steps_delta, num_training_steps=t_total)
@@ -233,6 +236,9 @@ def train(args, train_dataset, model, tokenizer):
                 scheduler.step()  # Update learning rate schedule
                 optimizer.step()
                 model.zero_grad()
+
+                if global_step % args.print_step == 0:
+                    logger.info('perturb','epoch:',epoch,'\tloss:',loss,'')
 
             global_step += 1
 
@@ -515,6 +521,8 @@ def main():
                         help='when to switch the loss to this adversarial formulation')
     parser.add_argument('--delta_steps', type=int, default=5 ,
                         help='when to switch the loss to this adversarial formulation')
+    parser.add_argument('--print_step', type=int, default=10 ,
+                        help='when to print log')
     reg_types=['none', 'adv_full']
     parser.add_argument('--reg_type', choices=reg_types, default="none", 
                         help='reg type:' + ' | '.join(reg_types))
