@@ -1412,7 +1412,7 @@ class BertForTokenClassification_delta(BertPreTrainedModel_delta):
 )
 class BertForQuestionAnswering_delta(BertPreTrainedModel_delta):
     def __init__(self, config):
-        super(BertForQuestionAnswering, self).__init__(config)
+        super(BertForQuestionAnswering_delta, self).__init__(config)
         self.num_labels = config.num_labels
 
         self.bert = BertModel_delta(config)
