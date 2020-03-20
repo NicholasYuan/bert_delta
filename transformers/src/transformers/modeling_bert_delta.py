@@ -28,6 +28,7 @@ import os
 import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss, MSELoss
+from torch.nn import init
 
 from .activations import gelu, gelu_new, swish
 from .configuration_bert import BertConfig
