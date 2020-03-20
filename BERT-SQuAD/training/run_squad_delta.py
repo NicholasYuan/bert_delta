@@ -24,7 +24,7 @@ import random
 import glob
 
 import sys
-sys.path.append('../transformers/src/')
+sys.path.append('../../transformers/src/')
 
 
 import numpy as np
