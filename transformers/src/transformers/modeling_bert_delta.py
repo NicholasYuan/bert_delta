@@ -1560,7 +1560,7 @@ class Linear_delta(nn.Module):
             self.delta.data.fill_(0)
 
     def forward(self, input):
-        hidden = F.linear(input, self.weight, self.bias)
+        hidden = torch.nn.functional.linear(input, self.weight, self.bias)
         if self.delta is not None:
             hidden = hidden + + self.delta * torch.norm(input)
         return  
