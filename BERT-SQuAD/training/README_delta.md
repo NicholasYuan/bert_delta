@@ -1,0 +1,16 @@
+python -m torch.distributed.launch --nproc_per_node=1 ./run_squad_delta.py \
+    --model_type bertdelta \
+    --model_name_or_path bert-large-uncased-whole-word-masking \
+    --do_train \
+    --do_eval \
+    --do_lower_case \
+    --train_file /Users/Rain/program/data/squad/train-v1.1.json \
+    --predict_file /Users/Rain/program/data/squad/dev-v1.1.json \
+    --learning_rate 3e-5 \
+    --num_train_epochs 2 \
+    --max_seq_length 384 \
+    --doc_stride 128 \
+    --output_dir ../models/wwm_uncased_finetuned_squad/ \
+    --per_gpu_eval_batch_size=3   \
+    --per_gpu_train_batch_size=3   \
+    --all_layer_margin --no_cuda 
