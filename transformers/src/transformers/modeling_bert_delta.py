@@ -1534,7 +1534,7 @@ class Linear_delta(nn.Module):
     __constants__ = ['bias', 'in_features', 'out_features', 'delta']
 
     def __init__(self, in_features, out_features, bias=True, delta=True):
-        super(Linear, self).__init__()
+        super(Linear_delta, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.weight = Parameter(torch.Tensor(out_features, in_features))
