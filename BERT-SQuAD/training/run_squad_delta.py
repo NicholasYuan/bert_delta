@@ -524,7 +524,7 @@ def main():
     parser.add_argument('--print_step', type=int, default=10 ,
                         help='when to print log')
     reg_types=['none', 'adv_full']
-    parser.add_argument('--reg_type', choices=reg_types, default="none", 
+    parser.add_argument('--reg_types', choices=reg_types, default="none", 
                         help='reg type:' + ' | '.join(reg_types))
 
     args = parser.parse_args()
