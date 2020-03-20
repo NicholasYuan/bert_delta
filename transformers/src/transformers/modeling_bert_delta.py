@@ -327,7 +327,7 @@ class BertAttention_delta(nn.Module):
 class BertIntermediate_delta(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.dense = Linear_delta(config.hidden_size, config.intermediate_size, delta=config.elta)
+        self.dense = Linear_delta(config.hidden_size, config.intermediate_size, delta=config.delta)
         if isinstance(config.hidden_act, str):
             self.intermediate_act_fn = ACT2FN[config.hidden_act]
         else:
