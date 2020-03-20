@@ -192,7 +192,7 @@ def train(args, train_dataset, model, tokenizer):
                 model.zero_grad()
 
                 if global_step % args.print_step == 0:
-                    logger.info('train','epoch:',_epoch,'\tloss:',loss,'' )
+                    logger.info('train','epoch:',_epoch,'\tloss:',loss.item(),'' )
             else:
                 delta_params_fill_0(model)
                 scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, warmup_steps=args.warmup_steps_delta, num_training_steps=t_total)
@@ -216,7 +216,7 @@ def train(args, train_dataset, model, tokenizer):
                     optimizer_delta.step()
                     model.zero_grad()
 
-                    tb_writer.add_scalar('perturbed loss', (loss), global_step)
+                    tb_writer.add_scalar('perturbed loss', (loss.item()), global_step)
 
                 outputs = model(**inputs)
                 perturb_loss = -outputs[0]
@@ -238,7 +238,7 @@ def train(args, train_dataset, model, tokenizer):
                 model.zero_grad()
 
                 if global_step % args.print_step == 0:
-                    logger.info('perturb','epoch:',_epoch,'\tloss:',loss,'')
+                    logger.info('perturb','epoch:',_epoch,'\tloss:',loss.item(),'')
 
             global_step += 1
 
