@@ -312,6 +312,7 @@ def evaluate(args, model, tokenizer, prefix=""):
     logger.info("  Num examples = %d", len(dataset))
     logger.info("  Batch size = %d", args.eval_batch_size)
     all_results = []
+    delta_params_fill_0(model)
     for batch in tqdm(eval_dataloader, desc="Evaluating"):
         model.eval()
         batch = tuple(t.to(args.device) for t in batch)
