@@ -198,11 +198,12 @@ def train(args, train_dataset, model, tokenizer):
                 optimizer.step()
                 model.zero_grad()
 
-                if global_step % args.print_step == 0:
+                if global_step % args.print_step == 0 and args.debug:
                     logger.info('train epoch: %d,\t step:%d,\tloss: %.4f' ,_epoch, global_step ,loss.item() )
             else:
                 delta_params_fill_0(model)
-                print('init delta', get_delta_norm())
+                if args.debug:
+                    logger.info('init delta', get_delta_norm())
                 scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, warmup_steps=args.warmup_steps_delta, num_training_steps=t_total)
 
                 for delta_step in trange(args.delta_steps, desc="delta_update"):
@@ -227,6 +228,8 @@ def train(args, train_dataset, model, tokenizer):
                     model.zero_grad()
 
                     tb_writer.add_scalar('perturbed loss', (loss.item()), global_step)
+                    if global_step % args.print_step == 0 and args.debug:
+                        logger.info('perturbed loss: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
 
                 outputs = model(**inputs)
                 perturb_loss = -outputs[0]
@@ -247,8 +250,8 @@ def train(args, train_dataset, model, tokenizer):
                 optimizer.step()
                 model.zero_grad()
 
-                if global_step % args.print_step == 0:
-                    logger.info('perturbed epoch: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
+                if global_step % args.print_step == 0 and args.debug:
+                    logger.info('train epoch: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
 
             global_step += 1
 
@@ -536,6 +539,9 @@ def main():
     reg_types=['none', 'adv_full']
     parser.add_argument('--reg_types', choices=reg_types, default="none", 
                         help='reg type:' + ' | '.join(reg_types))
+
+    parser.add_argument('--debug', action='store_true',
+                        help="use debug mode")
 
     args = parser.parse_args()
 
