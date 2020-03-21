@@ -117,7 +117,13 @@ def train(args, train_dataset, model, tokenizer):
     optimizer_grouped_parameters_delta = [
         {'params': [p for n, p in model.named_parameters() if (delta_params in n) ], 'weight_decay': args.weight_decay_delta}
         ]
-        
+
+    all_deltas = []
+    for _param in optimizer_grouped_parameters_delta[0]['params']:
+        print(_param)
+        all_deltas.append(_param)
+
+
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
     optimizer_delta = AdamW(optimizer_grouped_parameters_delta, lr=args.learning_rate_delta, eps=args.adam_epsilon_delta)
 
@@ -199,7 +205,9 @@ def train(args, train_dataset, model, tokenizer):
 
                 for delta_step in trange(args.delta_steps, desc="delta_update"):
                     outputs = model(**inputs)
-                    loss = -outputs[0]  # model outputs are always tuple in pytorch-transformers (see doc)
+                    loss = -outputs[0] + torch.sum([torch.norm(d) for d in all_deltas])  # model outputs are always tuple in pytorch-transformers (see doc)
+
+                    loss
 
                     if args.n_gpu > 1:
                         loss = loss.mean() # mean() to average on multi-gpu parallel (not distributed) training
