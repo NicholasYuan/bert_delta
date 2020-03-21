@@ -192,7 +192,7 @@ def train(args, train_dataset, model, tokenizer):
                 model.zero_grad()
 
                 if global_step % args.print_step == 0:
-                    logger.info('train epoch: %d, \tloss: %.4f' ,_epoch ,loss.item() )
+                    logger.info('train epoch: %d,\t step:%d,\tloss: %.4f' ,_epoch, global_step ,loss.item() )
             else:
                 delta_params_fill_0(model)
                 scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, warmup_steps=args.warmup_steps_delta, num_training_steps=t_total)
@@ -238,7 +238,7 @@ def train(args, train_dataset, model, tokenizer):
                 model.zero_grad()
 
                 if global_step % args.print_step == 0:
-                    logger.info('perturbed epoch: %d, \tloss: %.4f' ,_epoch ,loss.item())
+                    logger.info('perturbed epoch: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
 
             global_step += 1
 
