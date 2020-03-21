@@ -122,7 +122,8 @@ def train(args, train_dataset, model, tokenizer):
     for _param in optimizer_grouped_parameters_delta[0]['params']:
         print(_param)
         all_deltas.append(_param)
-
+    def get_delta_norm(delta_params=all_deltas):
+        return torch.sum([torch.norm(d) for d in delta_params])
 
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
     optimizer_delta = AdamW(optimizer_grouped_parameters_delta, lr=args.learning_rate_delta, eps=args.adam_epsilon_delta)
@@ -201,11 +202,12 @@ def train(args, train_dataset, model, tokenizer):
                     logger.info('train epoch: %d,\t step:%d,\tloss: %.4f' ,_epoch, global_step ,loss.item() )
             else:
                 delta_params_fill_0(model)
+                print('init delta', get_delta_norm())
                 scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, warmup_steps=args.warmup_steps_delta, num_training_steps=t_total)
 
                 for delta_step in trange(args.delta_steps, desc="delta_update"):
                     outputs = model(**inputs)
-                    loss = -outputs[0] + torch.sum([torch.norm(d) for d in all_deltas])  # model outputs are always tuple in pytorch-transformers (see doc)
+                    loss = -outputs[0] +  get_delta_norm() # model outputs are always tuple in pytorch-transformers (see doc)
 
                     loss
 
