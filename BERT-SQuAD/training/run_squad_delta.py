@@ -207,7 +207,7 @@ def train(args, train_dataset, model, tokenizer):
                     logger.info('init delta: %.6f', get_delta_norm().item())
                 scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, num_warmup_steps=args.warmup_steps_delta, num_training_steps=t_total)
 
-                for delta_step in trange(args.delta_steps, desc="delta_update"):
+                for delta_step in range(args.delta_steps):
                     outputs = model(**inputs)
                     loss = -outputs[0] +  get_delta_norm() # model outputs are always tuple in pytorch-transformers (see doc)
 
