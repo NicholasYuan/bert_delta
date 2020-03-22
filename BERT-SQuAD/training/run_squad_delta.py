@@ -124,7 +124,7 @@ def train(args, train_dataset, model, tokenizer):
             print(_param)
         all_deltas.append(_param)
     def get_delta_norm(delta_params=all_deltas):
-        return torch.sum([torch.norm(d) for d in delta_params])
+        return torch.sum(torch.Tensor([torch.norm(d).item() for d in delta_params]))
 
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
     optimizer_delta = AdamW(optimizer_grouped_parameters_delta, lr=args.learning_rate_delta, eps=args.adam_epsilon_delta)
