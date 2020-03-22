@@ -233,7 +233,7 @@ def train(args, train_dataset, model, tokenizer):
                     logger.info('trained delta: %.6f', get_delta_norm().item())
 
                 outputs = model(**inputs)
-                perturb_loss = -outputs[0]
+                perturb_loss = outputs[0]
 
                 if args.n_gpu > 1:
                     loss = perturb_loss.mean() # mean() to average on multi-gpu parallel (not distributed) training
