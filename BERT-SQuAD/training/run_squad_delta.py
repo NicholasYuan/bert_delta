@@ -204,7 +204,7 @@ def train(args, train_dataset, model, tokenizer):
             else:
                 delta_params_fill_0(model)
                 if args.debug:
-                    logger.info('init delta', get_delta_norm())
+                    logger.info('init delta', get_delta_norm().item())
                 scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, num_warmup_steps=args.warmup_steps_delta, num_training_steps=t_total)
 
                 for delta_step in trange(args.delta_steps, desc="delta_update"):
@@ -221,12 +221,14 @@ def train(args, train_dataset, model, tokenizer):
                     else:
                         loss.backward()
                         torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
+                    if args.debug:
+                        logger.info('trained delta', get_delta_norm().item())
 
                     scheduler.step()
                     optimizer_delta.step()
                     model.zero_grad()
 
-                    tb_writer.add_scalar('perturbed loss', (loss.item()), global_step)
+                    tb_writer.add_scalar('perturbed_loss', (loss.item()), global_step)
                     if global_step % args.print_step == 0 and args.debug:
                         logger.info('perturbed loss: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
 
