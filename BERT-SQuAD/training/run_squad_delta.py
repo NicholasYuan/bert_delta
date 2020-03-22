@@ -221,8 +221,6 @@ def train(args, train_dataset, model, tokenizer):
                     else:
                         loss.backward()
                         torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
-                    if args.debug:
-                        logger.info('trained delta: %.6f', get_delta_norm().item())
 
                     scheduler.step()
                     optimizer_delta.step()
@@ -231,6 +229,8 @@ def train(args, train_dataset, model, tokenizer):
                     tb_writer.add_scalar('perturbed_loss', (loss.item()), global_step)
                     if global_step % args.print_step == 0 and args.debug:
                         logger.info('perturbed loss: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
+                if args.debug:
+                    logger.info('trained delta: %.6f', get_delta_norm().item())
 
                 outputs = model(**inputs)
                 perturb_loss = -outputs[0]
