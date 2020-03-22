@@ -649,6 +649,8 @@ def main():
 
             result = dict((k + ('_{}'.format(global_step) if global_step else ''), v) for k, v in result.items())
             results.update(result)
+            
+            logger.info("Results: {}".format(results))
 
     logger.info("Results: {}".format(results))
 
