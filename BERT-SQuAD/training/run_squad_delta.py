@@ -166,7 +166,7 @@ def train(args, train_dataset, model, tokenizer):
     set_seed(args)  # Added here for reproductibility (even between python 2 and 3)
     for _epoch in train_iterator:
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
-        reg_type = 'none' if _epoch + 1 < args.switch_time else args.reg_types
+        reg_type = 'none' if _epoch < args.switch_time else args.reg_types
 
         for step, batch in enumerate(epoch_iterator):
             model.train()
@@ -210,8 +210,6 @@ def train(args, train_dataset, model, tokenizer):
                 for delta_step in trange(args.delta_steps, desc="delta_update"):
                     outputs = model(**inputs)
                     loss = -outputs[0] +  get_delta_norm() # model outputs are always tuple in pytorch-transformers (see doc)
-
-                    loss
 
                     if args.n_gpu > 1:
                         loss = loss.mean() # mean() to average on multi-gpu parallel (not distributed) training
