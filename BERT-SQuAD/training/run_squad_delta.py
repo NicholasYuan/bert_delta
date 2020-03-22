@@ -205,7 +205,7 @@ def train(args, train_dataset, model, tokenizer):
                 delta_params_fill_0(model)
                 if args.debug:
                     logger.info('init delta', get_delta_norm())
-                scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, warmup_steps=args.warmup_steps_delta, num_training_steps=t_total)
+                scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, num_warmup_steps=args.warmup_steps_delta, num_training_steps=t_total)
 
                 for delta_step in trange(args.delta_steps, desc="delta_update"):
                     outputs = model(**inputs)
