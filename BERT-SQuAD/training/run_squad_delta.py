@@ -120,7 +120,8 @@ def train(args, train_dataset, model, tokenizer):
 
     all_deltas = []
     for _param in optimizer_grouped_parameters_delta[0]['params']:
-        print(_param)
+        if args.debug:
+            print(_param)
         all_deltas.append(_param)
     def get_delta_norm(delta_params=all_deltas):
         return torch.sum([torch.norm(d) for d in delta_params])
