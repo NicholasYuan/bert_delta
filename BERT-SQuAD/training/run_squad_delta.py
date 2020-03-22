@@ -226,7 +226,7 @@ def train(args, train_dataset, model, tokenizer):
                     optimizer_delta.step()
                     model.zero_grad()
 
-                    tb_writer.add_scalar('perturbed_loss', (loss.item()), global_step)
+                    # tb_writer.add_scalar('perturbed_loss', (loss.item()), global_step)
                     if global_step % args.print_step == 0 and args.debug:
                         logger.info('perturbed loss: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
                 if args.debug:
