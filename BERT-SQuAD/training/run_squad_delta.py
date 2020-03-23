@@ -209,7 +209,7 @@ def train(args, train_dataset, model, tokenizer):
 
                 for delta_step in range(args.delta_steps):
                     outputs = model(**inputs)
-                    loss = -outputs[0] +  get_delta_norm() # model outputs are always tuple in pytorch-transformers (see doc)
+                    loss = -outputs[0]  # model outputs are always tuple in pytorch-transformers (see doc)
 
                     if args.n_gpu > 1:
                         loss = loss.mean() # mean() to average on multi-gpu parallel (not distributed) training
