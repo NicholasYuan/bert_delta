@@ -191,10 +191,10 @@ def train(args, train_dataset, model, tokenizer):
                 if args.fp16:
                     with amp.scale_loss(loss, optimizer) as scaled_loss:
                         scaled_loss.backward()
-                    torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
+                    # torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
                 else:
                     loss.backward()
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
+                    # torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
                 scheduler.step()  # Update learning rate schedule
                 optimizer.step()
                 model.zero_grad()
@@ -230,7 +230,7 @@ def train(args, train_dataset, model, tokenizer):
                     if global_step % args.print_step == 0 and args.debug:
                         logger.info('perturbed loss: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
                 if args.debug:
-                    logger.info('trained delta: %.6f', get_delta_norm().item())
+                    logger.info('trained delta: %.13f', get_delta_norm().item())
 
                 outputs = model(**inputs)
                 perturb_loss = outputs[0]
