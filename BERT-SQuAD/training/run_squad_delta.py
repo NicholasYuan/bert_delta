@@ -246,6 +246,8 @@ def train(args, train_dataset, model, tokenizer):
                         _delta.grad.data.mul_(10000)
                         if args.debug:
                             logger.info('delta grad norm: %.13f', torch.norm(_delta.grad.data).item())   
+                        if torch.norm(_delta.grad.data).item() - 0.0 < 1e-5:
+                            continue
                         _delta.grad.data.div_(torch.norm(_delta.grad.data))
 
                     scheduler_delta.step()
