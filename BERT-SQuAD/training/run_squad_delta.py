@@ -55,7 +55,7 @@ from utils_squad import (read_squad_examples, convert_examples_to_features,
 # You can remove it from the dependencies if you are using this script outside of the library
 # We've added it here for automated tests (see examples/test_examples.py file)
 from utils_squad_evaluate import EVAL_OPTS, main as evaluate_on_squad
-from eval_squad import evaluate_adversarial
+from ..eval_squad import evaluate_adversarial
 
 logger = logging.getLogger(__name__)
 
