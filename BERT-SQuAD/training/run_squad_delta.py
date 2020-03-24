@@ -204,7 +204,7 @@ def train(args, train_dataset, model, tokenizer):
             else:
                 delta_params_fill_0(model)
                 if args.debug:
-                    logger.info('init delta: %.6f', get_delta_norm().item())
+                    logger.info('init delta: %.13f', get_delta_norm().item())
 
                 # delta update type
                 if args.upd_types == 'sgd':
