@@ -208,6 +208,7 @@ def train(args, train_dataset, model, tokenizer):
 
                 # delta update type
                 if args.upd_types == 'sgd':
+                    # use sgd to update delta
                     scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, num_warmup_steps=args.warmup_steps_delta, num_training_steps=args.delta_steps)
                     for delta_step in range(args.delta_steps):
                         outputs = model(**inputs)
@@ -229,8 +230,26 @@ def train(args, train_dataset, model, tokenizer):
                         # tb_writer.add_scalar('perturbed_loss', (loss.item()), global_step)
                         if global_step % args.print_step == 0 and args.debug:
                             logger.info('perturbed loss: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
-                # elif args.upd_types == 'linear':
-                    
+                elif args.upd_types == 'linear':
+                    # use norm delta to update delta, proposed by goodfellow.
+                    scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, num_warmup_steps=args.warmup_steps_delta, num_training_steps=args.delta_steps)
+                    outputs = model(**inputs)
+                    loss = -outputs[0]  # model outputs are always tuple in pytorch-transformers (see doc)
+                    if args.n_gpu > 1:
+                        loss = loss.mean() # mean() to average on multi-gpu parallel (not distributed) training
+                    if args.fp16:
+                        with amp.scale_loss(loss, optimizer_delta) as scaled_loss:
+                            scaled_loss.backward()
+                    else:
+                        loss.backward()
+                    for _delta in all_deltas:
+                        _delta.grad.data.div_(torch.norm(_delta.grad.data))
+
+                    scheduler_delta.step()
+                    optimizer_delta.step()
+                    model.zero_grad()
+                    if global_step % args.print_step == 0 and args.debug:
+                        logger.info('perturbed loss: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
                 else:
                     raise Exception('none type',args.upd_types)
                 if args.debug:
