@@ -244,7 +244,7 @@ def train(args, train_dataset, model, tokenizer):
                         loss.backward()
                     for _delta in all_deltas:
                         _delta.grad.data.mul_(10000)
-                        if args.debug:
+                        if args.debug == 2:
                             logger.info('delta grad norm: %.13f', torch.norm(_delta.grad.data).item())   
                         if torch.norm(_delta.grad.data).item() - 0.0 < 1e-5:
                             continue
@@ -575,7 +575,7 @@ def main():
     parser.add_argument('--upd_types', choices=update_types, default="sgd", 
                         help='update type:' + ' | '.join(update_types))
 
-    parser.add_argument('--debug', action='store_true',
+    parser.add_argument('--debug', type=int, default=0,
                         help="use debug mode")
 
     args = parser.parse_args()
