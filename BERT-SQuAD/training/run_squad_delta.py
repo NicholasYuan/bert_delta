@@ -254,11 +254,9 @@ def train(args, train_dataset, model, tokenizer):
                     optimizer_delta.step()
                     model.zero_grad()
                     if global_step % args.print_step == 0 and args.debug:
-                        logger.info('perturbed loss: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
+                        logger.info('perturbed loss epoch: %d,\tstep:%d,\tloss: %.13f, \tdelta norm' ,_epoch ,global_step, loss.item(), get_delta_norm().item())
                 else:
                     raise Exception('none type',args.upd_types)
-                if args.debug:
-                    logger.info('trained delta: %.13f', get_delta_norm().item())
 
                 outputs = model(**inputs)
                 perturb_loss = outputs[0]
@@ -280,7 +278,7 @@ def train(args, train_dataset, model, tokenizer):
                 model.zero_grad()
 
                 if global_step % args.print_step == 0 and args.debug:
-                    logger.info('train epoch: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
+                    logger.info('train epoch: %d,\tstep:%d,\tloss: %.4f, \tdelta norm%.13f' ,_epoch ,global_step, loss.item(), get_delta_norm().item())
 
             global_step += 1
 
