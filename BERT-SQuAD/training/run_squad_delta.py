@@ -243,6 +243,8 @@ def train(args, train_dataset, model, tokenizer):
                     else:
                         loss.backward()
                     for _delta in all_deltas:
+                        if args.debug:
+                            logger.info('delta grad: %.13f' ,_delta.grad.data)   
                         _delta.grad.data.div_(torch.norm(_delta.grad.data))
 
                     scheduler_delta.step()
