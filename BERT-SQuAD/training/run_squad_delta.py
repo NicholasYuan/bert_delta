@@ -191,10 +191,10 @@ def train(args, train_dataset, model, tokenizer):
                 if args.fp16:
                     with amp.scale_loss(loss, optimizer) as scaled_loss:
                         scaled_loss.backward()
-                    # torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
+                    torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
                 else:
                     loss.backward()
-                    # torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
                 scheduler.step()  # Update learning rate schedule
                 optimizer.step()
                 model.zero_grad()
@@ -205,30 +205,34 @@ def train(args, train_dataset, model, tokenizer):
                 delta_params_fill_0(model)
                 if args.debug:
                     logger.info('init delta: %.6f', get_delta_norm().item())
-                scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, num_warmup_steps=args.warmup_steps_delta, num_training_steps=args.delta_steps)
 
-                for delta_step in range(args.delta_steps):
-                    outputs = model(**inputs)
-                    loss = -outputs[0]  # model outputs are always tuple in pytorch-transformers (see doc)
+                # delta update type
+                if args.upd_types == 'sgd':
+                    scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, num_warmup_steps=args.warmup_steps_delta, num_training_steps=args.delta_steps)
+                    for delta_step in range(args.delta_steps):
+                        outputs = model(**inputs)
+                        loss = -outputs[0]  # model outputs are always tuple in pytorch-transformers (see doc)
 
-                    if args.n_gpu > 1:
-                        loss = loss.mean() # mean() to average on multi-gpu parallel (not distributed) training
+                        if args.n_gpu > 1:
+                            loss = loss.mean() # mean() to average on multi-gpu parallel (not distributed) training
 
-                    if args.fp16:
-                        with amp.scale_loss(loss, optimizer_delta) as scaled_loss:
-                            scaled_loss.backward()
-                        torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer_delta), args.max_grad_norm)
-                    else:
-                        loss.backward()
-                        torch.nn.utils.clip_grad_norm_(all_deltas, args.max_grad_norm)
-
-                    scheduler_delta.step()
-                    optimizer_delta.step()
-                    model.zero_grad()
-
-                    # tb_writer.add_scalar('perturbed_loss', (loss.item()), global_step)
-                    if global_step % args.print_step == 0 and args.debug:
-                        logger.info('perturbed loss: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
+                        if args.fp16:
+                            with amp.scale_loss(loss, optimizer_delta) as scaled_loss:
+                                scaled_loss.backward()
+                            # torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer_delta), args.max_grad_norm)
+                        else:
+                            loss.backward()
+                            # torch.nn.utils.clip_grad_norm_(all_deltas, args.max_grad_norm)
+                        scheduler_delta.step()
+                        optimizer_delta.step()
+                        model.zero_grad()
+                        # tb_writer.add_scalar('perturbed_loss', (loss.item()), global_step)
+                        if global_step % args.print_step == 0 and args.debug:
+                            logger.info('perturbed loss: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
+                # elif args.upd_types == 'linear':
+                    
+                else:
+                    raise Exception('none type',args.upd_types)
                 if args.debug:
                     logger.info('trained delta: %.13f', get_delta_norm().item())
 
@@ -541,6 +545,9 @@ def main():
     reg_types=['none', 'adv_full']
     parser.add_argument('--reg_types', choices=reg_types, default="none", 
                         help='reg type:' + ' | '.join(reg_types))
+    update_types=['sgd','linear']
+    parser.add_argument('--upd_types', choices=update_types, default="sgd", 
+                        help='update type:' + ' | '.join(update_types))
 
     parser.add_argument('--debug', action='store_true',
                         help="use debug mode")
