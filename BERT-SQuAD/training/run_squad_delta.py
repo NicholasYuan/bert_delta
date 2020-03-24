@@ -55,6 +55,7 @@ from utils_squad import (read_squad_examples, convert_examples_to_features,
 # You can remove it from the dependencies if you are using this script outside of the library
 # We've added it here for automated tests (see examples/test_examples.py file)
 from utils_squad_evaluate import EVAL_OPTS, main as evaluate_on_squad
+from eval_squad import evaluate_adversarial
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +204,7 @@ def train(args, train_dataset, model, tokenizer):
                     logger.info('train epoch: %d,\t step:%d,\tloss: %.4f' ,_epoch, global_step ,loss.item() )
             else:
                 delta_params_fill_0(model)
-                if args.debug:
+                if args.debug==2:
                     logger.info('init delta: %.13f', get_delta_norm().item())
 
                 # delta update type
@@ -229,7 +230,7 @@ def train(args, train_dataset, model, tokenizer):
                         model.zero_grad()
                         # tb_writer.add_scalar('perturbed_loss', (loss.item()), global_step)
                         if global_step % args.print_step == 0 and args.debug:
-                            logger.info('perturbed loss: %d,\tstep:%d,\tloss: %.4f' ,_epoch ,global_step, loss.item())
+                            logger.info('perturbed loss epoch: %d,\tstep:%d,\tloss: %.13f, \tdelta norm: %.13f' ,_epoch ,global_step, loss.item(), get_delta_norm().item())
                 elif args.upd_types == 'linear':
                     # use norm delta to update delta, proposed by goodfellow.
                     scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, num_warmup_steps=args.warmup_steps_delta, num_training_steps=args.delta_steps)
@@ -254,7 +255,7 @@ def train(args, train_dataset, model, tokenizer):
                     optimizer_delta.step()
                     model.zero_grad()
                     if global_step % args.print_step == 0 and args.debug:
-                        logger.info('perturbed loss epoch: %d,\tstep:%d,\tloss: %.13f, \tdelta norm' ,_epoch ,global_step, loss.item(), get_delta_norm().item())
+                        logger.info('perturbed loss epoch: %d,\tstep:%d,\tloss: %.13f, \tdelta norm: %.13f' ,_epoch ,global_step, loss.item(), get_delta_norm().item())
                 else:
                     raise Exception('none type',args.upd_types)
 
@@ -278,11 +279,9 @@ def train(args, train_dataset, model, tokenizer):
                 model.zero_grad()
 
                 if global_step % args.print_step == 0 and args.debug:
-                    logger.info('train epoch: %d,\tstep:%d,\tloss: %.4f, \tdelta norm%.13f' ,_epoch ,global_step, loss.item(), get_delta_norm().item())
+                    logger.info('training epoch: %d,\tstep:%d,\tloss: %.4f, \tdelta norm: %.13f' ,_epoch ,global_step, loss.item(), get_delta_norm().item())
 
             global_step += 1
-
-
             tr_loss += loss.item()
 
 
@@ -399,12 +398,142 @@ def evaluate(args, model, tokenizer, prefix=""):
     results = evaluate_on_squad(evaluate_options)
     return results
 
+def evaluate_adv(args, model, tokenizer, prefix="", eval_type='addsent'):
+
+    dataset, examples, features = load_and_cache_examples_adv(args, tokenizer, evaluate=eval_type, output_examples=True)
+
+    if not os.path.exists(args.output_dir) and args.local_rank in [-1, 0]:
+        os.makedirs(args.output_dir)
+
+    args.eval_batch_size = args.per_gpu_eval_batch_size * max(1, args.n_gpu)
+    # Note that DistributedSampler samples randomly
+    eval_sampler = SequentialSampler(dataset) if args.local_rank == -1 else DistributedSampler(dataset)
+    eval_dataloader = DataLoader(dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
+
+    # Eval!
+    logger.info("***** Running evaluation {} *****".format(prefix))
+    logger.info("  Num examples = %d", len(dataset))
+    logger.info("  Batch size = %d", args.eval_batch_size)
+    all_results = []
+    delta_params_fill_0(model)
+    for batch in tqdm(eval_dataloader, desc="Evaluating"):
+        model.eval()
+        batch = tuple(t.to(args.device) for t in batch)
+        with torch.no_grad():
+            inputs = {'input_ids':      batch[0],
+                      'attention_mask': batch[1],
+                      'token_type_ids': None if args.model_type == 'xlm' else batch[2]  # XLM don't use segment_ids
+                      }
+            example_indices = batch[3]
+            if args.model_type in ['xlnet', 'xlm']:
+                inputs.update({'cls_index': batch[4],
+                               'p_mask':    batch[5]})
+            outputs = model(**inputs)
+
+        for i, example_index in enumerate(example_indices):
+            eval_feature = features[example_index.item()]
+            unique_id = int(eval_feature.unique_id)
+            if args.model_type in ['xlnet', 'xlm']:
+                # XLNet uses a more complex post-processing procedure
+                result = RawResultExtended(unique_id            = unique_id,
+                                           start_top_log_probs  = to_list(outputs[0][i]),
+                                           start_top_index      = to_list(outputs[1][i]),
+                                           end_top_log_probs    = to_list(outputs[2][i]),
+                                           end_top_index        = to_list(outputs[3][i]),
+                                           cls_logits           = to_list(outputs[4][i]))
+            else:
+                result = RawResult(unique_id    = unique_id,
+                                   start_logits = to_list(outputs[0][i]),
+                                   end_logits   = to_list(outputs[1][i]))
+            all_results.append(result)
+
+    # Compute predictions
+    output_prediction_file = os.path.join(args.output_dir, "predictions_{}.json".format(prefix))
+    output_nbest_file = os.path.join(args.output_dir, "nbest_predictions_{}.json".format(prefix))
+    if args.version_2_with_negative:
+        output_null_log_odds_file = os.path.join(args.output_dir, "null_odds_{}.json".format(prefix))
+    else:
+        output_null_log_odds_file = None
+
+    if args.model_type in ['xlnet', 'xlm']:
+        # XLNet uses a more complex post-processing procedure
+        write_predictions_extended(examples, features, all_results, args.n_best_size,
+                        args.max_answer_length, output_prediction_file,
+                        output_nbest_file, output_null_log_odds_file, args.predict_file,
+                        model.config.start_n_top, model.config.end_n_top,
+                        args.version_2_with_negative, tokenizer, args.verbose_logging)
+    else:
+        write_predictions(examples, features, all_results, args.n_best_size,
+                        args.max_answer_length, args.do_lower_case, output_prediction_file,
+                        output_nbest_file, output_null_log_odds_file, args.verbose_logging,
+                        args.version_2_with_negative, args.null_score_diff_threshold)
+
+    # Evaluate with the official SQuAD script
+    evaluate_options = EVAL_OPTS(data_file=args.predict_file,
+                                 pred_file=output_prediction_file,
+                                 na_prob_file=output_null_log_odds_file)
+    # TODO
+    results = evaluate_on_squad(evaluate_options)
+    return results
+
 
 def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False):
     # Load data features from cache or dataset file
     input_file = args.predict_file if evaluate else args.train_file
     cached_features_file = os.path.join(os.path.dirname(input_file), 'cached_{}_{}_{}'.format(
         'dev' if evaluate else 'train',
+        list(filter(None, args.model_name_or_path.split('/'))).pop(),
+        str(args.max_seq_length)))
+    if os.path.exists(cached_features_file) and not args.overwrite_cache and not output_examples:
+        logger.info("Loading features from cached file %s", cached_features_file)
+        features = torch.load(cached_features_file)
+    else:
+        logger.info("Creating features from dataset file at %s", input_file)
+        examples = read_squad_examples(input_file=input_file,
+                                                is_training=not evaluate,
+                                                version_2_with_negative=args.version_2_with_negative)
+        features = convert_examples_to_features(examples=examples,
+                                                tokenizer=tokenizer,
+                                                max_seq_length=args.max_seq_length,
+                                                doc_stride=args.doc_stride,
+                                                max_query_length=args.max_query_length,
+                                                is_training=not evaluate)
+        if args.local_rank in [-1, 0]:
+            logger.info("Saving features into cached file %s", cached_features_file)
+            torch.save(features, cached_features_file)
+
+    # Convert to Tensors and build dataset
+    all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
+    all_input_mask = torch.tensor([f.input_mask for f in features], dtype=torch.long)
+    all_segment_ids = torch.tensor([f.segment_ids for f in features], dtype=torch.long)
+    all_cls_index = torch.tensor([f.cls_index for f in features], dtype=torch.long)
+    all_p_mask = torch.tensor([f.p_mask for f in features], dtype=torch.float)
+    if evaluate:
+        all_example_index = torch.arange(all_input_ids.size(0), dtype=torch.long)
+        dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids,
+                                all_example_index, all_cls_index, all_p_mask)
+    else:
+        all_start_positions = torch.tensor([f.start_position for f in features], dtype=torch.long)
+        all_end_positions = torch.tensor([f.end_position for f in features], dtype=torch.long)
+        dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids,
+                                all_start_positions, all_end_positions,
+                                all_cls_index, all_p_mask)
+
+    if output_examples:
+        return dataset, examples, features
+    return dataset
+
+def load_and_cache_examples_adv(args, tokenizer, evaluate='addsent', output_examples=False):
+    # Load data features from cache or dataset file
+    if evaluate == 'addsent' :
+        input_file = args.addsent_file
+    elif evaluate == 'addsentone':
+        input_file = args.addsentone_file
+    else:
+        raise Exception('none type', evaluate)
+
+    cached_features_file = os.path.join(os.path.dirname(input_file), 'cached_{}_{}_{}'.format(
+        evaluate,
         list(filter(None, args.model_name_or_path.split('/'))).pop(),
         str(args.max_seq_length)))
     if os.path.exists(cached_features_file) and not args.overwrite_cache and not output_examples:
@@ -487,8 +616,6 @@ def main():
                         help="Whether to run training.")
     parser.add_argument("--do_eval", action='store_true',
                         help="Whether to run eval on the dev set.")
-    parser.add_argument("--do_adveval", action='store_true',
-                        help="Whether to run adv eval on the adv set.")
     parser.add_argument("--evaluate_during_training", action='store_true',
                         help="Rul evaluation during training at each logging step.")
     parser.add_argument("--do_lower_case", action='store_true',
@@ -576,6 +703,18 @@ def main():
     parser.add_argument('--debug', type=int, default=0,
                         help="use debug mode")
 
+    parser.add_argument("--do_adveval", action='store_true',
+                        help="Whether to run adv eval on the adv set.")
+    parser.add_argument("--addsent_file", 
+                        default='../../squad/sample1k-HCVerifyAll.json', 
+                        type=str, required=False,
+                        help="SQuAD json for addsent adversarial. E.g., sample1k-HCVerifyAll.json")
+    parser.add_argument("--addsentone_file", 
+                        default='../../squad/sample1k-HCVerifySample.json', 
+                        type=str, required=False,
+                        help="SQuAD json for addsentone adversarial. E.g., sample1k-HCVerifySample.json")
+
+
     args = parser.parse_args()
 
     if os.path.exists(args.output_dir) and os.listdir(args.output_dir) and args.do_train and not args.overwrite_output_dir:
@@ -661,7 +800,7 @@ def main():
 
     # Evaluation - we can ask to evaluate all the checkpoints (sub-directories) in a directory
     results = {}
-    if args.do_eval and args.local_rank in [-1, 0]:
+    if args.do_adveval and args.local_rank in [-1, 0]:
         checkpoints = [args.output_dir]
         if args.eval_all_checkpoints:
             checkpoints = list(os.path.dirname(c) for c in sorted(glob.glob(args.output_dir + '/**/' + WEIGHTS_NAME, recursive=True)))
@@ -683,6 +822,32 @@ def main():
             
             logger.info("Results: {}".format(results))
 
+
+    # adversarial evaluation
+    # results_adv = {}
+    # if args.do_eval and args.local_rank in [-1, 0]:
+    #     checkpoints = [args.output_dir]
+    #     if args.eval_all_checkpoints:
+    #         checkpoints = list(os.path.dirname(c) for c in sorted(glob.glob(args.output_dir + '/**/' + WEIGHTS_NAME, recursive=True)))
+    #         logging.getLogger("pytorch_transformers.modeling_utils").setLevel(logging.WARN)  # Reduce model loading logs
+
+    #     logger.info("Evaluate the following checkpoints: %s", checkpoints)
+
+    #     for checkpoint in checkpoints:
+    #         # Reload the model
+    #         global_step = checkpoint.split('-')[-1] if len(checkpoints) > 1 else ""
+    #         model = model_class.from_pretrained(checkpoint)
+    #         model.to(args.device)
+
+    #         # Evaluate
+    #         result_adv = evaluate(args, model, tokenizer, prefix=global_step)
+
+    #         result_adv = dict((k + ('_{}'.format(global_step) if global_step else ''), v) for k, v in result_adv.items())
+    #         results_adv.update(result_adv)
+            
+    #         logger.info("Results adversarial: {}".format(results_adv))
+
+    # logger.info("Results adversarial: {}".format(results_adv))
     logger.info("Results: {}".format(results))
 
     return results
