@@ -129,8 +129,15 @@ def train(args, train_dataset, model, tokenizer):
     def get_delta_norm(delta_params=all_deltas):
         return torch.mean(torch.Tensor([torch.norm(d).item() for d in delta_params]))
 
-    optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
-    optimizer_delta = AdamW(optimizer_grouped_parameters_delta, lr=args.learning_rate_delta, eps=args.adam_epsilon_delta)
+    if args.opt_types == 'sgd':
+        opt_fn = torch.optim.SGD
+    elif args.opt_types == 'adam':
+        opt_fn = torch.optim.Adam:
+    elif args.opt_types == 'adamw':
+        opt_fn = AdamW
+
+    optimizer = opt_fn(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
+    optimizer_delta = opt_fn(optimizer_grouped_parameters_delta, lr=args.learning_rate_delta, eps=args.adam_epsilon_delta)
 
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total)
     scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, num_warmup_steps=args.warmup_steps_delta, num_training_steps=t_total)
@@ -698,9 +705,14 @@ def main():
     update_types=['sgd','linear']
     parser.add_argument('--upd_types', choices=update_types, default="sgd", 
                         help='update type:' + ' | '.join(update_types))
+    optimization_types=['sgd','adam', 'adamw']
+    parser.add_argument('--opt_types', choices=optimization_types, default="adamw", 
+                        help='optimizer type:' + ' | '.join(optimization_types))
+
 
     parser.add_argument('--debug', type=int, default=0,
                         help="use debug mode")
+
 
     parser.add_argument("--do_adveval", action='store_true',
                         help="Whether to run adv eval on the adv set.")
