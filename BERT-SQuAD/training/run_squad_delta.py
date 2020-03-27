@@ -131,13 +131,18 @@ def train(args, train_dataset, model, tokenizer):
 
     if args.opt_types == 'sgd':
         opt_fn = torch.optim.SGD
+        optimizer = opt_fn(optimizer_grouped_parameters, lr=args.learning_rate)
+        optimizer_delta = opt_fn(optimizer_grouped_parameters_delta, lr=args.learning_rate_delta)
+
     elif args.opt_types == 'adam':
-        opt_fn = torch.optim.Adam:
+        opt_fn = torch.optim.Adam
+        optimizer = opt_fn(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
+        optimizer_delta = opt_fn(optimizer_grouped_parameters_delta, lr=args.learning_rate_delta, eps=args.adam_epsilon_delta)
+
     elif args.opt_types == 'adamw':
         opt_fn = AdamW
-
-    optimizer = opt_fn(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
-    optimizer_delta = opt_fn(optimizer_grouped_parameters_delta, lr=args.learning_rate_delta, eps=args.adam_epsilon_delta)
+        optimizer = opt_fn(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
+        optimizer_delta = opt_fn(optimizer_grouped_parameters_delta, lr=args.learning_rate_delta, eps=args.adam_epsilon_delta)
 
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total)
     scheduler_delta = get_linear_schedule_with_warmup(optimizer_delta, num_warmup_steps=args.warmup_steps_delta, num_training_steps=t_total)
