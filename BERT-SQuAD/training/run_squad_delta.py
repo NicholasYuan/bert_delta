@@ -497,6 +497,9 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
         str(args.max_seq_length)))
     if os.path.exists(cached_features_file) and not args.overwrite_cache:
         logger.info("Loading features from cached file %s", cached_features_file)
+        examples = read_squad_examples(input_file=input_file,
+                                                is_training=not evaluate,
+                                                version_2_with_negative=args.version_2_with_negative)
         features = torch.load(cached_features_file)
     else:
         logger.info("Creating features from dataset file at %s", input_file)
