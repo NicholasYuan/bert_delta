@@ -411,9 +411,9 @@ def evaluate(args, model, tokenizer, prefix=""):
 
 def evaluate_adv(args, model, tokenizer, prefix="", eval_type='addsent'):
 
-    if evaluate == 'addsent' :
+    if eval_type == 'addsent' :
         input_file = args.addsent_file
-    elif evaluate == 'addonesent':
+    elif eval_type == 'addonesent':
         input_file = args.addonesent_file
     else:
         raise Exception('none type', evaluate)
