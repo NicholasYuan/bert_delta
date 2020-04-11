@@ -56,8 +56,8 @@ from utils_squad import (read_squad_examples, convert_examples_to_features,
 # We've added it here for automated tests (see examples/test_examples.py file)
 from utils_squad_evaluate import EVAL_OPTS, main as evaluate_on_squad
 
-# sys.path.append('../')
-# from eval_squad import evaluate_adversarial
+sys.path.append('../')
+from eval_squad import evaluate_adversarial
 
 logger = logging.getLogger(__name__)
 
@@ -466,10 +466,10 @@ def evaluate_adv(args, model, tokenizer, prefix="", eval_type='addsent'):
             all_results.append(result)
 
     # Compute predictions
-    output_prediction_file = os.path.join(args.output_dir, "predictions_{}.json".format(prefix))
-    output_nbest_file = os.path.join(args.output_dir, "nbest_predictions_{}.json".format(prefix))
+    output_prediction_file = os.path.join(args.output_dir, "predictions_adv_{}.json".format(prefix))
+    output_nbest_file = os.path.join(args.output_dir, "nbest_predictions_adv_{}.json".format(prefix))
     if args.version_2_with_negative:
-        output_null_log_odds_file = os.path.join(args.output_dir, "null_odds_{}.json".format(prefix))
+        output_null_log_odds_file = os.path.join(args.output_dir, "null_odds_adv_{}.json".format(prefix))
     else:
         output_null_log_odds_file = None
 
@@ -491,7 +491,8 @@ def evaluate_adv(args, model, tokenizer, prefix="", eval_type='addsent'):
                                  pred_file=output_prediction_file,
                                  na_prob_file=output_null_log_odds_file)
     # TODO
-    results = evaluate_on_squad(evaluate_options)
+    results = evaluate_adversarial(input_file, output_prediction_file)
+    # results = evaluate_on_squad(evaluate_options)
     return results
 
 
@@ -879,8 +880,8 @@ def main():
             results_adv_addonesent.update(result_adv_addonesent)
             results_adv_addsent.update(result_adv_addsent)
 
-            logger.info("Results adversarial: {}".format(results_adv_addsent))
-            logger.info("Results adversarial: {}".format(results_adv_addonesent))
+            logger.info("Results adversarial addsent: {}".format(results_adv_addsent))
+            logger.info("Results adversarial addonesent: {}".format(results_adv_addonesent))
 
     if args.do_adveval:
         logger.info("Results adversarial addsent: {}".format(results_adv_addsent))
