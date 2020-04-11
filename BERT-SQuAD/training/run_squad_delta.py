@@ -873,11 +873,11 @@ def main():
             result_adv_addsent = evaluate_adv(args, model, tokenizer, prefix=global_step,  eval_type='addsent')
             result_adv_addonesent = evaluate_adv(args, model, tokenizer, prefix=global_step,  eval_type='addonesent')
 
-            result_adv_addsent = dict((k + ('_{}'.format(global_step) if global_step else ''), v) for k, v in result_adv.items())
-            result_adv_addonesent = dict((k + ('_{}'.format(global_step) if global_step else ''), v) for k, v in result_adv.items())
+            result_adv_addsent = dict((k + ('_{}'.format(global_step) if global_step else ''), v) for k, v in result_adv_addsent.items())
+            result_adv_addonesent = dict((k + ('_{}'.format(global_step) if global_step else ''), v) for k, v in result_adv_addonesent.items())
 
-            results_adv_addonesent.update(result_adv)
-            results_adv_addsent.update(result_adv)
+            results_adv_addonesent.update(result_adv_addonesent)
+            results_adv_addsent.update(result_adv_addsent)
             
             logger.info("Results adversarial: {}".format(results_adv_addsent))
             logger.info("Results adversarial: {}".format(results_adv_addonesent))
