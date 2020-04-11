@@ -413,8 +413,8 @@ def evaluate_adv(args, model, tokenizer, prefix="", eval_type='addsent'):
 
     if evaluate == 'addsent' :
         input_file = args.addsent_file
-    elif evaluate == 'addsentone':
-        input_file = args.addsentone_file
+    elif evaluate == 'addonesent':
+        input_file = args.addonesent_file
     else:
         raise Exception('none type', evaluate)
 
@@ -548,8 +548,8 @@ def load_and_cache_examples_adv(args, tokenizer, evaluate='addsent', output_exam
     # Load data features from cache or dataset file
     if evaluate == 'addsent' :
         input_file = args.addsent_file
-    elif evaluate == 'addsentone':
-        input_file = args.addsentone_file
+    elif evaluate == 'addonesent':
+        input_file = args.addonesent_file
     else:
         raise Exception('none type', evaluate)
 
@@ -738,10 +738,10 @@ def main():
                         default='../../squad/sample1k-HCVerifyAll.json', 
                         type=str, required=False,
                         help="SQuAD json for addsent adversarial. E.g., sample1k-HCVerifyAll.json")
-    parser.add_argument("--addsentone_file", 
+    parser.add_argument("--addonesent_file", 
                         default='../../squad/sample1k-HCVerifySample.json', 
                         type=str, required=False,
-                        help="SQuAD json for addsentone adversarial. E.g., sample1k-HCVerifySample.json")
+                        help="SQuAD json for addonesent adversarial. E.g., sample1k-HCVerifySample.json")
 
 
     args = parser.parse_args()
