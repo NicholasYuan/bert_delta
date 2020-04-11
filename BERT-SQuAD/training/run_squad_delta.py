@@ -878,12 +878,14 @@ def main():
 
             results_adv_addonesent.update(result_adv_addonesent)
             results_adv_addsent.update(result_adv_addsent)
-            
+
             logger.info("Results adversarial: {}".format(results_adv_addsent))
             logger.info("Results adversarial: {}".format(results_adv_addonesent))
 
     if args.do_adveval:
-        logger.info("Results adversarial: {}".format(results_adv))
+        logger.info("Results adversarial addsent: {}".format(results_adv_addsent))
+        logger.info("Results adversarial addonesent: {}".format(results_adv_addonesent))
+
     if args.do_eval:
         logger.info("Results: {}".format(results))
 
