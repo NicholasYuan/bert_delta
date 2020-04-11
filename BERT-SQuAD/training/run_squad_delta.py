@@ -490,8 +490,9 @@ def evaluate_adv(args, model, tokenizer, prefix="", eval_type='addsent'):
     evaluate_options = EVAL_OPTS(data_file=input_file,
                                  pred_file=output_prediction_file,
                                  na_prob_file=output_null_log_odds_file)
-    # TODO
-    results = evaluate_adversarial(dataset, output_prediction_file, verbose=False)
+
+    dataset_json = json.load(input_file)
+    results = evaluate_adversarial(dataset_json['data'], output_prediction_file, verbose=False)
     # results = evaluate_on_squad(evaluate_options)
     return results
 
