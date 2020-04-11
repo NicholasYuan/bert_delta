@@ -83,19 +83,19 @@ def print_details(dataset, predictions, adv_ids):
         print ('Title: %s' % article['title'].encode('utf-8'))
         print( 'Paragraph: %s' % paragraph['context'].encode('utf-8'))
         print( 'Question: %s' % qa['question'].encode('utf-8'))
-        print( 'Answers: [%s]' % ', '.join(a['text'].encode('utf-8'))
-                                          for a in qa['answers'])
+        print( 'Answers: [%s]' % ', '.join(a['text'].encode('utf-8')
+                                          for a in qa['answers']))
         orig_color = get_answer_color(predictions[orig_id], qa['answers'])
-        print( 'Predicted: %s' % colored()
-            predictions[orig_id], orig_color).encode('utf-8')
+        print( 'Predicted: %s' % colored(
+            predictions[orig_id], orig_color).encode('utf-8'))
         print( 'Adversary succeeded?: %s' % (adv_id != orig_id))
         if adv_id != orig_id:
-          print( 'Adversarial Paragraph: %s' % highlight_after()
-              id_to_paragraph[adv_id], len(paragraph['context'])).encode('utf-8')
+          print( 'Adversarial Paragraph: %s' % highlight_after(
+              id_to_paragraph[adv_id], len(paragraph['context'])).encode('utf-8'))
           # highlight_after is a hack that only works when mutations append stuff.
           adv_color = get_answer_color(predictions[adv_id], qa['answers'])
-          print( 'Prediction under Adversary: %s' % colored()
-              predictions[adv_id], adv_color).encode('utf-8')
+          print( 'Prediction under Adversary: %s' % colored(
+              predictions[adv_id], adv_color).encode('utf-8'))
         print('')
 
 
