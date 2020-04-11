@@ -846,31 +846,40 @@ def main():
 
 
     # adversarial evaluation
-    # results_adv = {}
-    # if args.do_adveval and args.local_rank in [-1, 0]:
-    #     checkpoints = [args.output_dir]
-    #     if args.eval_all_checkpoints:
-    #         checkpoints = list(os.path.dirname(c) for c in sorted(glob.glob(args.output_dir + '/**/' + WEIGHTS_NAME, recursive=True)))
-    #         logging.getLogger("pytorch_transformers.modeling_utils").setLevel(logging.WARN)  # Reduce model loading logs
+    results_adv_addsent = {}
+    results_adv_addonesent = {}
+    if args.do_adveval and args.local_rank in [-1, 0]:
+        checkpoints = [args.output_dir]
+        if args.eval_all_checkpoints:
+            checkpoints = list(os.path.dirname(c) for c in sorted(glob.glob(args.output_dir + '/**/' + WEIGHTS_NAME, recursive=True)))
+            logging.getLogger("pytorch_transformers.modeling_utils").setLevel(logging.WARN)  # Reduce model loading logs
 
-    #     logger.info("Evaluate the following checkpoints: %s", checkpoints)
+        logger.info("Evaluate the following checkpoints: %s", checkpoints)
 
-    #     for checkpoint in checkpoints:
-    #         # Reload the model
-    #         global_step = checkpoint.split('-')[-1] if len(checkpoints) > 1 else ""
-    #         model = model_class.from_pretrained(checkpoint)
-    #         model.to(args.device)
+        for checkpoint in checkpoints:
+            # Reload the model
+            global_step = checkpoint.split('-')[-1] if len(checkpoints) > 1 else ""
+            model = model_class.from_pretrained(checkpoint)
+            model.to(args.device)
 
-    #         # Evaluate
-    #         result_adv = evaluate(args, model, tokenizer, prefix=global_step)
+            # Evaluate
+            result_adv_addsent = evaluate_adv(args, model, tokenizer, prefix=global_step,  eval_type='addsent')
+            result_adv_addonesent = evaluate_adv(args, model, tokenizer, prefix=global_step,  eval_type='addonesent')
 
-    #         result_adv = dict((k + ('_{}'.format(global_step) if global_step else ''), v) for k, v in result_adv.items())
-    #         results_adv.update(result_adv)
+            result_adv_addsent = dict((k + ('_{}'.format(global_step) if global_step else ''), v) for k, v in result_adv.items())
+            result_adv_addonesent = dict((k + ('_{}'.format(global_step) if global_step else ''), v) for k, v in result_adv.items())
+
+            results_adv_addonesent.update(result_adv)
+            results_adv_addsent.update(result_adv)
             
-    #         logger.info("Results adversarial: {}".format(results_adv))
+            logger.info("Results adversarial: {}".format(results_adv_addsent))
+            logger.info("Results adversarial: {}".format(results_adv_addonesent))
 
-    # logger.info("Results adversarial: {}".format(results_adv))
-    logger.info("Results: {}".format(results))
+    if args.do_adveval:
+        logger.info("Results adversarial: {}".format(results_adv))
+    if args.do_eval:
+        logger.info("Results: {}".format(results))
+
 
     return results
 
