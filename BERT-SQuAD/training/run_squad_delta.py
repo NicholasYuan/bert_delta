@@ -495,7 +495,9 @@ def evaluate_adv(args, model, tokenizer, prefix="", eval_type='addsent'):
 
     with open(input_file) as dataset_file:
         dataset_json = json.load(dataset_file)
-    results = evaluate_adversarial(dataset_json['data'], output_prediction_file, verbose=False)
+    with open(output_prediction_file) as prediction_file:
+        predictions = json.load(prediction_file)
+    results = evaluate_adversarial(dataset_json['data'], predictions, verbose=False)
     # results = evaluate_on_squad(evaluate_options)
     return results
 
