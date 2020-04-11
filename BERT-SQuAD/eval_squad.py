@@ -80,23 +80,23 @@ def print_details(dataset, predictions, adv_ids):
         orig_id = strip_id(qa['id'])
         if orig_id != qa['id']: continue  # Skip the mutated ones 
         adv_id = adv_ids[orig_id]
-        print 'Title: %s' % article['title'].encode('utf-8')
-        print 'Paragraph: %s' % paragraph['context'].encode('utf-8')
-        print 'Question: %s' % qa['question'].encode('utf-8')
-        print 'Answers: [%s]' % ', '.join(a['text'].encode('utf-8')
+        print ('Title: %s' % article['title'].encode('utf-8'))
+        print( 'Paragraph: %s' % paragraph['context'].encode('utf-8'))
+        print( 'Question: %s' % qa['question'].encode('utf-8'))
+        print( 'Answers: [%s]' % ', '.join(a['text'].encode('utf-8'))
                                           for a in qa['answers'])
         orig_color = get_answer_color(predictions[orig_id], qa['answers'])
-        print 'Predicted: %s' % colored(
+        print( 'Predicted: %s' % colored()
             predictions[orig_id], orig_color).encode('utf-8')
-        print 'Adversary succeeded?: %s' % (adv_id != orig_id)
+        print( 'Adversary succeeded?: %s' % (adv_id != orig_id))
         if adv_id != orig_id:
-          print 'Adversarial Paragraph: %s' % highlight_after(
+          print( 'Adversarial Paragraph: %s' % highlight_after()
               id_to_paragraph[adv_id], len(paragraph['context'])).encode('utf-8')
           # highlight_after is a hack that only works when mutations append stuff.
           adv_color = get_answer_color(predictions[adv_id], qa['answers'])
-          print 'Prediction under Adversary: %s' % colored(
+          print( 'Prediction under Adversary: %s' % colored()
               predictions[adv_id], adv_color).encode('utf-8')
-        print
+        print('')
 
 
 
@@ -116,7 +116,7 @@ def evaluate_adversarial(dataset, predictions, verbose=False, id_set=None):
         all_ids.add(orig_id)
         if qa['id'] not in predictions:
           message = 'Unanswered question ' + qa['id'] + ' will receive score 0.'
-          print >> sys.stderr, message
+          print ( message)
           continue
         ground_truths = list(map(lambda x: x['text'], qa['answers']))
         prediction = predictions[qa['id']]
@@ -171,14 +171,14 @@ def evaluate_by_attempted(dataset, predictions):
   total_num = len(attempted) + len(not_attempted)
   results_attempted = evaluate_adversarial(dataset, predictions,
                                            id_set=attempted)
-  print 'Attempted %d/%d = %.2f%%' % (
-      len(attempted), total_num, 100.0 * len(attempted) / total_num)
-  print json.dumps(results_attempted)
+  print ('Attempted %d/%d = %.2f%%' % (
+      len(attempted), total_num, 100.0 * len(attempted) / total_num))
+  print (json.dumps(results_attempted))
   results_not_attempted = evaluate_adversarial(dataset, predictions,
                                                id_set=not_attempted)
-  print 'Did not attempt %d/%d = %.2f%%' % (
-      len(not_attempted), total_num, 100.0 * len(not_attempted) / total_num)
-  print json.dumps(results_not_attempted)
+  print ('Did not attempt %d/%d = %.2f%%' % (
+      len(not_attempted), total_num, 100.0 * len(not_attempted) / total_num))
+  print (json.dumps(results_not_attempted))
 
 
 if __name__ == '__main__':
