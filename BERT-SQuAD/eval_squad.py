@@ -210,6 +210,6 @@ if __name__ == '__main__':
     with open(args.out_file, 'wb') as f:
       json.dump(results, f)
   else:
-    print json.dumps(results)
+    print (json.dumps(results))
   if args.split_by_attempted:
     evaluate_by_attempted(dataset, predictions)
