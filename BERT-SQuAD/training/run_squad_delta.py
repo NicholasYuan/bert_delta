@@ -22,6 +22,7 @@ import logging
 import os
 import random
 import glob
+import json
 
 import sys
 sys.path.append('../../transformers/src/')
