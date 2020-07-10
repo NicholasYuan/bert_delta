@@ -25,7 +25,7 @@ import glob
 import json
 
 import sys
-sys.path.append('../../transformers/src/')
+sys.path.insert(0,'../../transformers/src/')
 
 
 import numpy as np
