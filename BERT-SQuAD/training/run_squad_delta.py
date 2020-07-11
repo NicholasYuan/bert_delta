@@ -522,7 +522,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
                 extmp.doc_tokens += extmp.orig_answer_text
                 examples.append(extmp)
 
-    if os.path.exists(cached_features_file) and not args.overwrite_cache:
+    if os.path.exists(cached_features_file) and not args.overwrite_cache and not use_adding_answer:
         logger.info("Loading features from cached file %s", cached_features_file)
         features = torch.load(cached_features_file)
     else:
