@@ -23,6 +23,7 @@ import os
 import random
 import glob
 import json
+import copy
 
 import sys
 sys.path.insert(0,'../../transformers/src/')
@@ -509,17 +510,23 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
         'dev' if evaluate else 'train',
         list(filter(None, args.model_name_or_path.split('/'))).pop(),
         str(args.max_seq_length)))
+
+    examples = read_squad_examples(input_file=input_file,
+                                    is_training=not evaluate,
+                                    version_2_with_negative=args.version_2_with_negative)
+    if use_adding_answer:
+        lense = len(examples)
+        for ex in examples:
+            if random.random() < 0.6:
+                extmp = copy.deepcopy(ex)
+                extmp.doc_tokens += orig_answer_text
+                examples.append(extmp)
+
     if os.path.exists(cached_features_file) and not args.overwrite_cache:
         logger.info("Loading features from cached file %s", cached_features_file)
-        examples = read_squad_examples(input_file=input_file,
-                                                is_training=not evaluate,
-                                                version_2_with_negative=args.version_2_with_negative)
         features = torch.load(cached_features_file)
     else:
         logger.info("Creating features from dataset file at %s", input_file)
-        examples = read_squad_examples(input_file=input_file,
-                                                is_training=not evaluate,
-                                                version_2_with_negative=args.version_2_with_negative)
         features = convert_examples_to_features(examples=examples,
                                                 tokenizer=tokenizer,
                                                 max_seq_length=args.max_seq_length,
@@ -551,7 +558,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
         return dataset, examples, features
     return dataset
 
-def load_and_cache_examples_adv(args, tokenizer, evaluate='addsent', output_examples=False):
+def load_and_cache_examples_adv(args, tokenizer, evaluate='addsent', output_examples=False, use_adding_answer = False):
     # Load data features from cache or dataset file
     if evaluate == 'addsent' :
         input_file = args.addsent_file
@@ -564,17 +571,16 @@ def load_and_cache_examples_adv(args, tokenizer, evaluate='addsent', output_exam
         evaluate,
         list(filter(None, args.model_name_or_path.split('/'))).pop(),
         str(args.max_seq_length)))
+
+    examples = read_squad_examples(input_file=input_file,
+                                        is_training=not evaluate,
+                                        version_2_with_negative=args.version_2_with_negative)
+
     if os.path.exists(cached_features_file) and not args.overwrite_cache:
         logger.info("Loading features from cached file %s", cached_features_file)
-        examples = read_squad_examples(input_file=input_file,
-                                                is_training=not evaluate,
-                                                version_2_with_negative=args.version_2_with_negative)
         features = torch.load(cached_features_file)
     else:
         logger.info("Creating features from dataset file at %s", input_file)
-        examples = read_squad_examples(input_file=input_file,
-                                                is_training=not evaluate,
-                                                version_2_with_negative=args.version_2_with_negative)
         features = convert_examples_to_features(examples=examples,
                                                 tokenizer=tokenizer,
                                                 max_seq_length=args.max_seq_length,
@@ -749,6 +755,8 @@ def main():
                         default='../../squad/sample1k-HCVerifySample.json', 
                         type=str, required=False,
                         help="SQuAD json for addonesent adversarial. E.g., sample1k-HCVerifySample.json")
+    parser.add_argument("--use_adding_answer", action='store_true',
+                        help="Whether to add answer at ends of sentences.")
 
 
     args = parser.parse_args()
@@ -807,7 +815,7 @@ def main():
 
     # Training
     if args.do_train:
-        train_dataset = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False)
+        train_dataset = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False, use_adding_answer=args.use_adding_answer)
         global_step, tr_loss = train(args, train_dataset, model, tokenizer)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
