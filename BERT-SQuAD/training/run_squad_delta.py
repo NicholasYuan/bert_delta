@@ -519,7 +519,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
         for ex in examples:
             if random.random() < 0.6:
                 extmp = copy.deepcopy(ex)
-                extmp.doc_tokens += orig_answer_text
+                extmp.doc_tokens += extmp.orig_answer_text
                 examples.append(extmp)
 
     if os.path.exists(cached_features_file) and not args.overwrite_cache:
