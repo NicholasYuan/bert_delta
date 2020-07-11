@@ -503,7 +503,7 @@ def evaluate_adv(args, model, tokenizer, prefix="", eval_type='addsent'):
     return results
 
 
-def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False):
+def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False, use_adding_answer = False):
     # Load data features from cache or dataset file
     input_file = args.predict_file if evaluate else args.train_file
     cached_features_file = os.path.join(os.path.dirname(input_file), 'cached_{}_{}_{}'.format(
@@ -558,7 +558,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
         return dataset, examples, features
     return dataset
 
-def load_and_cache_examples_adv(args, tokenizer, evaluate='addsent', output_examples=False, use_adding_answer = False):
+def load_and_cache_examples_adv(args, tokenizer, evaluate='addsent', output_examples=False):
     # Load data features from cache or dataset file
     if evaluate == 'addsent' :
         input_file = args.addsent_file
