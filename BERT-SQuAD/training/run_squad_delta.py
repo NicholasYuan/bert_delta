@@ -520,7 +520,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
             if random.random() < 0.6:
                 extmp = copy.deepcopy(ex)
                 # extmp.doc_tokens += extmp.orig_answer_text
-                sss = extmp.start_position - random.randint(0,10)
+                sss = extmp.start_position - random.randint(0,15)
                 sss = max(sss,0)
                 eee = sss+50
                 eee = min(eee, len(extmp.doc_tokens))
