@@ -519,7 +519,12 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
         for ex in examples:
             if random.random() < 0.6:
                 extmp = copy.deepcopy(ex)
-                extmp.doc_tokens += extmp.orig_answer_text
+                # extmp.doc_tokens += extmp.orig_answer_text
+                sss = extmp.start_position - random.randint(0,10)
+                sss = max(sss,0)
+                eee = sss+50
+                eee = min(eee, len(extmp.doc_tokens))
+                extmp.doc_tokens += extmp.doc_tokens[sss:eee]
                 examples.append(extmp)
         cached_features_file = os.path.join(os.path.dirname(input_file), 'cached_{}_{}_{}'.format(
             'addinganswer',
